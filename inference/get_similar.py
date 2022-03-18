@@ -7,6 +7,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
+import cv2
+
 sys.path.append(".")
 
 from config import cfg
@@ -126,6 +128,21 @@ if __name__ == "__main__":
         }
         for q_num, query_path in enumerate(paths)
     }
+
+    for q_num, query_path in enumerate(paths):
+        img = cv2.imread(query_path)
+        cv2.imshow('query', img)
+
+        g_paths = paths_gallery[indices[q_num, :]]
+
+        all_gal = []
+        for p in g_paths:
+            res = cv2.imread(p)
+            all_gal.append(cv2.resize(res, (100,300)))
+        
+        im_concat = cv2.hconcat(all_gal)
+        cv2.imshow('res', im_concat)
+        cv2.waitKey(0)
 
     ### Save
     SAVE_DIR = Path(cfg.OUTPUT_DIR)
