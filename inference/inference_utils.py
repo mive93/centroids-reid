@@ -193,12 +193,11 @@ def print_wb_output(model, first_different=False):
             print("close file")
             f = None
 
-def _inference(model, batch, normalize_with_bn=True, export=False):
+def _inference(model, batch, use_cuda, normalize_with_bn=True, export=False):
     model.eval()
     with torch.no_grad():
         start = datetime.datetime.now()
         data, _, filename = batch
-        print(data.shape)
         if export:
             print('Exporting for tkDNN')
             # create folders debug and layers if do not exist
@@ -233,7 +232,7 @@ def _inference(model, batch, normalize_with_bn=True, export=False):
         return global_feat, filename
 
 
-def run_inference(model, val_loader, cfg, print_freq, export=False):
+def run_inference(model, val_loader, cfg, print_freq, use_cuda, export=False):
     embeddings = []
     paths = []
     model = model.cuda() if use_cuda else model
@@ -241,8 +240,7 @@ def run_inference(model, val_loader, cfg, print_freq, export=False):
     for pos, x in enumerate(val_loader):
         if pos % print_freq == 0:
             log.info(f"Number of processed images: {pos*cfg.TEST.IMS_PER_BATCH}")
-        model.cuda()
-        embedding, path = _inference(model, x, export=export)
+        embedding, path = _inference(model, x, use_cuda, export=export)
         for vv, pp in zip(embedding, path):
             paths.append(pp)
             embeddings.append(vv.detach().cpu().numpy())
