@@ -209,7 +209,7 @@ def _inference(model, batch, normalize_with_bn=True, export=False):
                 m.register_forward_hook(hook)
 
         _, global_feat = model.backbone(
-            data.cuda() if torch.cuda.is_available() else data
+            data.cuda() if use_cuda else data
         )
         if normalize_with_bn:
             global_feat = model.bn(global_feat)
@@ -236,6 +236,7 @@ def _inference(model, batch, normalize_with_bn=True, export=False):
 def run_inference(model, val_loader, cfg, print_freq, export=False):
     embeddings = []
     paths = []
+    model = model.cuda() if use_cuda else model
 
     for pos, x in enumerate(val_loader):
         if pos % print_freq == 0:
