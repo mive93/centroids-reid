@@ -222,8 +222,47 @@ def _inference(model, batch, use_cuda, normalize_with_bn=True, export=False):
             with open("resnet18_ctl.txt", 'w') as f:
                 for item in list(model.backbone.children()):
                     f.write("%s\n" % item)
+                for n, m in model.bn.named_modules():
+                    f.write("%s\n" % m)
 
             summary(model.backbone, (3, 256, 128))
+
+            for n, m in model.bn.named_modules():
+                print(n,m)
+                if 'BatchNorm1d' in str(m.type):
+                    t = "final-bn"
+                    file_name = "layers/" + t + ".bin"
+
+                    # save batch norm weights
+                    print("open file: ", file_name)
+                    f = open(file_name, mode='wb')
+                    b = m._parameters['bias'].cpu().data.numpy()
+                    b = np.array(b, dtype=np.float32)
+                    s = m._parameters['weight'].cpu().data.numpy()
+                    s = np.array(s, dtype=np.float32)
+                    rm = m.running_mean.cpu().data.numpy()
+                    rm = np.array(rm, dtype=np.float32)
+                    rv = m.running_var.cpu().data.numpy()
+                    rv = np.array(rv, dtype=np.float32)
+                    print(b,s,rm,rv)
+                    bin_write(f,b)
+                    bin_write(f,s)
+                    bin_write(f,rm)
+                    bin_write(f,rv)
+                    print ("    b shape:", np.shape(b))
+                    print ("    s shape:", np.shape(s))
+                    print ("    rm shape:", np.shape(rm))
+                    print ("    rv shape:", np.shape(rv))
+                    print("close file")
+                    f.close()
+
+                    # save batch norm outputs
+                    o = global_feat.cpu().data.numpy()
+                    o = np.array(o, dtype=np.float32)
+                    o.tofile("debug/" + t + ".bin", format="f")
+
+                    print('------- ', n, ' ------') 
+                    print("debug  ",o.shape)
 
         end = datetime.datetime.now()
         delta = end - start
